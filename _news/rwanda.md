@@ -1,9 +1,19 @@
-
+---
 layout: post
-<!-- title: A long announcement with details -->
+title: Rwanda fieldwork
+date: 2023-06-14 16:11:00-0400
+inline: true
+---
+
+Finished an MT fieldwork in Rwanda with my lab colleagues. A challenging area to do an MT survey on, with lots of powerlines, and hard and sloping terrain, but a great learning experience.
+
+<!-- ---
+layout: post
+title: Rwanda fieldwork
 date: 2023-06-04 16:11:00-0400
 inline: false
-Finished a MT fieldwork in Rwanda with my lab colleagues. A challenging area to do an MT survey on, with lots of powerlines, and hard and slopy terrain.
+---
+Finished a MT fieldwork in Rwanda with my lab colleagues. A challenging area to do an MT survey on, with lots of powerlines, and hard and slopy terrain, but a great learning experience. -->
 <!-- ---
 Announcements and news can be much longer than just quick inline posts. In fact, they can have all the features available for the standard blog posts. See below.
 
