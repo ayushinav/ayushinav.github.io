@@ -1,7 +1,7 @@
 
 layout: post
 <!-- title: A long announcement with details -->
-date: 2023-06-20 16:11:00-0400
+date: 2023-06-04 16:11:00-0400
 inline: false
 Finished a MT fieldwork in Rwanda with my lab colleagues. A challenging area to do an MT survey on, with lots of powerlines, and hard and slopy terrain.
 <!-- ---
