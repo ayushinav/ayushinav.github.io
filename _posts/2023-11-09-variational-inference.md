@@ -21,9 +21,7 @@ $$
 \end{aligned}
 $$
 
-We can use any iterative optimization scheme to maximize the above objective. If we start  with some initial $$\theta$$, 
-
-we have an estimate of $$p_{\theta}(x|z)$$ but we do not know $$p(z)$$. 
+We can use any iterative optimization scheme to maximize the above objective. If we start  with some initial $$\theta$$, we have an estimate of $$p_{\theta}(x|z)$$ but we do not know $$p(z)$$. 
 
 <!-- Unless we know the exact analytical expression for the integral, we can use any iterative optimi
 
