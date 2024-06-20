@@ -3,7 +3,7 @@ layout: post
 title:  Monte Carlo
 date:   2024-02-02 16:40:16
 description: Because basics are important
-tags: probability math code
+tags: probability math
 categories: 
 toc:
   sidebar: left
