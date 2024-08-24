@@ -8,135 +8,126 @@ categories:
 toc:
   sidebar: left
 ---
+## Problem statement
+
+In geophysical inversion involving uncertainty quantification, we want to calculate the posterior $$p(m|d)$$, where $$m$$ are the model parameters we want to invert for and $$d$$ are the observed data. Given the *a priori* distribution $$p(m)$$ and the likelihood function $$p(d|m)$$, the bayesian formulation is
+
+$$
+p(m|d) \propto p(d|m) p(d)
+$$
+
+An obvious candidate to the above problem is MCMC, which has asymptotic convergence guarantees. This however requires a large number of samples. Variational inference turns this inference problem into am optimization one.
+
 # Theory of variational inference 
 
-Given the observed data variable $$x$$ and assuming some latent variable $$z$$, variational inference tries to approximate the posterior $$p(z|x)$$ with a family of known simpler distributions.
-The posterior, as we know, is 
-
-$$
-p(z|x)= \frac{p(x,z)}{p(x)}= \frac{p(x|z)p(z)}{p(x)} \propto p(x|z)p(z)
-$$
-
-which, in the probablistic literature, is written as
-
-$$
-posterior \; distribution \propto likelihood * prior \; distribution
-$$
-
-KL-divergence is a popular metric to check the similarity between two distributions, say $$p_1(x)$$ and $$p_2(x)$$, as
+Variational Inference approximates the posterior $$p(m|d)$$ with a distribution $$q(m)$$, parameterized on, say $$\phi$$. Note that $$q(m)$$ is still conditioned on $$d$$. One would be $$q(m) = \mathcal{N}(\mu(d), \sigma(d)^2)$$, where $$\mu$$ and $$\sigma$$ are the outputs from a network with $$d$$ as input and parameterized on $$\phi$$. We want $$q$$ to be as similar to $$p(m|d)$$. In other words, we want the KL divergence $$KL(q(m)|| p(m|d))$$ between the two to be as small as possible:
 
 $$
 \begin{aligned}
-KL(p_1(x)|| p_2(x))= \mathbb{E}_{x \sim p_1(x)}\left[\log \frac{p_1(x)}{p_2(x)}\right]
+KL(q(m|d)|| p(m|d)) 
+&= \mathbb{E}_{m \sim q(m|d)}\left[\log \frac{q(m|d)}{p(m|d)}\right] \\
+&= \mathbb{E}_{m \sim q(m|d)}\left[\log q(m|d)\right]- \mathbb{E}_{m \sim q(m)}\left[\log p(d| m)\right] - \mathbb{E}_{m \sim q(m)} \left[\log p(m)\right] + \mathbb{E}_{m \sim q(m)}\left[\log p(d)\right] \\
+&= \mathbb{E}_{m \sim q(m|d)}\left[\log q(m|d)\right]- \mathbb{E}_{m \sim q(m)}\left[\log p(d| m)\right] - \mathbb{E}_{m \sim q(m)} \left[\log p(m)\right] + \log p(m) \\
+& (\log p(m) \text{ is marginal and independent of sampling } m)
 \end{aligned}
 $$
 
- which in our case translates to
+The first three terms on the right hand side constitute the Evidence Lower Bound, or ELBO, defined as:
 
 $$
 \begin{aligned}
-KL(q(z)|| p(z|x)) &= \mathbb{E}_{z \sim q(z)}\left[\log \frac{q(z)}{p(z|x)}\right] \\
-&= \mathbb{E}_{z \sim q(z)}\left[\log q(z)\right]- \mathbb{E}_{z \sim q(z)}\left[\log p(z,x)\right] + \mathbb{E}_{z \sim q(z)}\left[\log p(x)\right] \\
-&= \mathbb{E}_{z \sim q(z)}\left[\log q(z)\right]- \mathbb{E}_{z \sim q(z)}\left[\log p(z,x)\right] + \log p(x) \\
-&(\log p(x) \text{ is marginal, therefore independent of sampling } z)
+& \operatorname{ELBO}(q) = \mathbb{E}_{m \sim q(m|d)}\left[\log p(m, d)\right] + \mathbb{E}_{m \sim q(m)}\left[\log p(m)\right] - \mathbb{E}_{m \sim q(m)}\left[\log q(m)\right] \\
+\implies & KL(q(m|d)|| p(m|d)) + \operatorname{ELBO}(q) = \log p(m) = \text{Constant}
 \end{aligned}
 $$
 
-In the above expression, the last term $$\log p(x)$$ is constant wrt $$x$$. Defining 
+Therefore, maximizing ELBO minimizes the KL divergence. Minimizing ELBO can be done in the following steps:
+* Sample $$d_i \sim p(d)$$
+* Get $$ELBO(q)$$ by sampling $$m \sim q(m|d)$$
+* Calculate $$\nabla_{\phi} \operatorname{ELBO}(q)$$
+* Update $$\phi$$ using gradient ascent
+
+
+## Going beyond
+The theory of variational inference was mostly developed to obtain a parameteric distribution of the observed data variable $$d$$ and assuming some latent variable $$m$$. The marginal distribution is
 
 $$
-ELBO(q)= \mathbb{E}_{z \sim q(z)}\left[\log p(z,x)\right]- \mathbb{E}_{z \sim q(z)}\left[\log q(z)\right]
-$$
-we can say that making the two distributions as similar as possible, implying minimizing $$KL(q(z)||p(z|x))$$ is equivalent to maximizing $$ELBO(q)$$ since the first term in the above equation is constant wrt $$z$$. Also, we can write
-
-$$
-\begin{aligned}
-\log p(x) &= + ELBO(q)+ KL(q(z)|| p(z|x)) \\
-&\ge ELBO(q)
-\end{aligned}
+p(d) = \int p(d|m) p(m) dm 
 $$
 
-Therefore, as the KL divergence decreases, we have the $$ELBO(q)$$, called the *Evidence Lower Bound*, become a tighter lower bound to the marginal probability $$p(x)$$. 
-
-## A better prespective
-
-This allows us to look at problem from another approach, in terms of approximating $$p(x)$$. Now, let's have the observed data $$x$$ sampled from an unknown complex distribution 
-$$p(x)$$. Assuming a latent variable $$z \sim p(z)$$, were $$p(z)$$ is some simple distribution and also assuming $$p(x|z)$$ is simple, we can compute $$p(x)$$ by 
-
-$$
-p(x)= \int p(x|z)p(z)dz
-$$
-
-Assuming $$p(x)$$ is parameterized on $$\theta$$ (as an example $$\theta$$ can represent the mean and variance of a normal distribution, a complex version can be called the parameters of a GMM, a linear combination of multiple gaussians), then it is easy to see that $$p(x|z)$$ will be parameterized on $$\theta$$ where $$\theta$$ might come from $$z$$, that is the various means and variance of the different gaussians, and probably also which gaussian to sample from. This means 
-$$p_{\theta}(x)= \int p_{\theta}(x|z)p(z)dz$$
-Now, our objective is to estimate $$p(x)$$, that is, the parameters of $$p(x)$$, that is $$\theta$$. By probabilistic regression, we want to maximize the log-likelihood $$ \log p(x)$$. 
+In this case, we do not know what $$p(d|m)$$ looks like, and let's say it's parameterized on $$\theta$$. Let's have $$q(m)$$ again but this time it is to be used as a proposal distribution. For any sample $$d_i$$, estimating the likelihood takes the form
 
 $$
 \begin{aligned}
- \therefore \theta &= \underset{\theta}{\arg \max} \underset{i}\sum \log p_{\theta}(x_i) \\
- &= \underset{\theta}{\arg \max} \underset{i}\sum \log \int p_{\theta}(x_i|z)p(z)dz
-\end{aligned}
-$$
-
-In general, we need a lot of $$z$$'s to approximate the above integration well, making this approach intractable. Before we go into how to make this computationally feasible, let's try to modify the objective function a bit. We have
-
-$$
-\begin{aligned}
- \log p_{\theta}(x_i) &= \log \int p_{\theta}(x_i|z)p(z)dz \\
- & \text{For any probabilty } q(z) \text { we have}\\
- &= \log \int \frac{p_{\theta}(x_i|z)p(z) }{q(z)} q(z)dz \\
- &= \log \mathbb{E}_{z \sim q(z)} \left[ \frac{p_{\theta}(x_i|z)p(z)}{q(z)}\right] \\
+ \log p_{\theta}(d_i) &= \log \int p_{\theta}(d_i|m)p(m)dm \\
+ & \text{For any probabilty } q(m) \text { we have}\\
+ &= \log \int \frac{p_{\theta}(d_i|z)p(m) }{q(m)} q(m)dm \\
+ &= \log \mathbb{E}_{m \sim q(m)} \left[ \frac{p_{\theta}(d_i|m)p(m)}{q(m)}\right] \\
  & \text{Using Jensen's inequality} \\
- & \ge \mathbb{E}_{z \sim q(z)} \left[\log \frac{p_{\theta}(x_i|z)p(z)}{q(z)}\right] \\
- &= \mathbb{E}_{z \sim q(z)} \left[\log \frac{p_{\theta}(x_i,z)}{q(z)}\right] \\
- &= \mathbb{E}_{z \sim q(z)} \left[\log p_{\theta}(x_i,z)\right] - \mathbb{E}_{z \sim q(z)} \left[\log q(z) \right] \\
+ & \ge \mathbb{E}_{m \sim q(m)} \left[\log \frac{p_{\theta}(d_i|m)p(m)}{q(m)}\right] \\
+ &= \mathbb{E}_{m \sim q(m)} \left[\log \frac{p_{\theta}(d_i|m)p(m)}{q(m)}\right] \\
+ &= \mathbb{E}_{m \sim q(m)} \left[\log p_{\theta}(d_i|m)\right] + \mathbb{E}_{m \sim q(m)} \left[p(m)\right] - \mathbb{E}_{m \sim q(m)} \left[\log q(m) \right] \\
  &= ELBO(q)
 \end{aligned} 
 $$
 
-Now, we see more clearly and mathematically how $$ELBO(q)$$ provides a lower bound to 
-$$\log p(x)$$. One can again do the same steps and see that minimizing $$KL(q(z)|| p(z|x))$$ leads to more tightening of the lower bound on the marginal probability $$p(x)$$.
+THus, the same ELBO becomes a lower bound to the marginal distribution of the observed variable. We now have to optimize with respect to $$\theta$$, and minimizing ELBO has one more step:
+* Sample $$d_i \sim p(d)$$
+* Get $$ELBO(q)$$ by sampling $$m \sim q(m|d)$$
+* Calculate $$\nabla_{\phi} \operatorname{ELBO}(q)$$
+* Update $$\phi$$ using gradient ascent
+* Calculate $$\nabla_{\theta} \operatorname{ELBO}(q)$$
+* Update $$\theta$$ using gradient ascent
 
-# Training
-So far, we can conclude that maximizing ELBO can be used as an optimization problem to minimize the KL divergence between the posterior and its approximation. We did not talk about how we can make this problem tractable. This is widely done using mean field approximation. Mean-field approximation assumes that each latent variable can be drawn independt of the other, that is, no two variables bear any correlation among themselves, that is, if we assumed a multivariate Gaussian for $$q(z)$$, then this approximation means that the covariance matrix is just a diagonal matrix. While this assumption limits the usage when there IS a correlation, that may be problem dependent and we tackle that later. Therefore, using the mean-field approximation, we have 
+## $$\nabla_\theta \operatorname{ELBO}(q)$$
+
+While all the steps looked fairly simple until now, there are a few nitty gritties. For a sample 
+* Sample $$d_i \sim p(d)$$
+$$d_i \sim p(d)$$, we pass it throught the network to obtain $$q_\phi(m|d)$$, eg., the network outputs the mean and variance of a normal distribution. Before any optimization, $$\phi$$ is initialized in any way. 
+* Get $$ELBO(q)$$ by sampling $$m \sim q(m|d)$$
+Sampling a few samples from $$q(m|d)$$, the expectaion can be estimated. 
+* Calculate $$\nabla_{\phi} \operatorname{ELBO}(q)$$
+* Update $$\phi$$ using gradient ascent
+* Calculate $$\nabla_{\theta} \operatorname{ELBO}(q)$$
+We note that only the first term here is dependent on $$\theta$$. $$p(m)$$ is the *a priori* distribution of $$m$$ and $$q(m|d)$$ is parameterized on $$\phi$$. For one sample, say $$m^*$$, we pass it through the network to obtain the distribution $$p_\theta(d|m)$$, we can easily differentiate through $$\theta$$, using backpropagation. 
+* Update $$\theta$$ using gradient ascent
+
+## $$\nabla_\phi \operatorname{ELBO}(q)$$
+Most of the steps are similar as above until we get to the point where we have to calculate 
+$$\nabla_\phi \operatorname{ELBO}(q)$$. The first thing we notice is we have to differentiate through the sampling process. To compute this, we make use of the reparameterization trick. This means we assume another variable $$\tilde{m}$$ such that we can write
 
 $$
-q(z)= \underset{i}{\Pi}q_i(z_i)
+m \sim q_\phi(m) \Longleftrightarrow m = g_{\phi}(\tilde{m}) \quad \text{where} \quad \tilde{m} \sim h(\tilde{m})
 $$
 
-Coming back to the training part. We are solving the optimization problem:
+This is better understood via an example. Let $$q(m)$$ be $$\mathcal{N}(\mu, \sigma^2)$$, then defining $$ \tilde{m} \sim \mathcal{N}(0, 1)$$
+
+$$
+m \sim \mathcal{N}(\mu, \sigma^2) \Longleftrightarrow m = \mu + \sigma \tilde{m} \quad \text{where} \quad \tilde{m} \sim \mathcal{N}(0, 1)
+$$
+
+This way, we can sample from $$\tilde{m}$$ to get the samples from the same distribution as $$m$$. We, therefore, sample $$\tilde{m}$$ and not $$m$$. The ELBO takes the form
 
 $$
 \begin{aligned}
-\theta &= \underset{\theta}{\arg \max}\; ELBO(q) \\
-&= \underset{\theta}{\arg \max} \; \mathbb{E}_{z \sim q(z)}\left[\log p_{\theta}(z,x)\right]- \mathbb{E}_{z \sim q(z)}\left[\log q(z)\right]
+\operatorname{ELBO}{q} 
+&= \mathbb{E}_{m \sim q(m)}\left[ logp_\theta{d_i|m} + p(m) - log q(m) \right] \\
+&= \mathbb{E}_{\tilde{m} \sim h(\tilde{m})}\left[ logp_\theta{d_i|g_{\phi}(\tilde{m})} + p(g_{\phi}(\tilde{m})) - log q(g_{\phi}(\tilde{m})) \right] \\
 \end{aligned}
 $$
 
-## Given
-A likelihood expression $$p(x|z)$$. In many cases, we assume a mixture model, typically GMMs, if all we are given is the observed data and we don't know any likelihood expression. 
-## Initialization
-* We assume an initial $$\theta$$.
-* We assume a $$q_i(z)$$. For a gaussian family, this would imply that the parameters of $$q_i$$ are $$\mu_i$$ and $$\sigma_i$$.
+We can now differentiate through the expression w.r.t $$\phi$$, in the similar way as we did for $$\theta$$. To summarize, the training process transforms into:
 
-## Iterations
-
-* So given $$x$$'s, the first step is to sample $$x_i$$
-* Compute the $$\nabla_{\theta}ELBO(q)$$ by:
-    * Sample $$z$$ from $$q_i(z)$$. In practice, sampling just one $$z_i$$ works fine, but sampling more would lead to better accuracy. Also, because we mostly use Gaussian distributions, we have analytical expression. Not really sure here. 
-    * Compute the Expectation for $$ELBO$$ and then its gradient. Computing gradient should be simple because we would have a likelihood term.
-* Update $$\theta$$
-* Compute the gradient of $$ELBO$$ wrt $$q_i$$, that is, $$\mu_i$$ and $$\sigma_i$$, using the already sampled $$z$$'s.
-* Update $$q_i$$, that is, $$\mu_i$$ and $$\sigma_i$$.
-
-Note that, we are sampling $$x_i$$ and updating $$q_i$$ for each $$x_i$$. This method of optimization is called coordinate ascent, where we optimize for each dimension independently. We can onbiously include mini-batches or update for all the parameters together, using simple gradient ascent.
-
-## Amortizing
-
-When we have a lot of samples, instead of having a $$q_i$$ for every sample, we can use a network/ any function approximator to output the $$\mu_i$$ and $$\sigma_i$$ for an $$x_i$$. Then we would update the parameters of the network $$\phi$$. 
-
-We can build our intuition around the fact that $$q(z)$$ is trying to approximate 
-$$p(z|x)$$, that is, much like $$p(x|z)$$ was parameterized on $$\theta$$, we parameterize $$p(z|x)$$ on $$\phi$$. Thus, if we also have a network for $$p_{\theta}(x|z)$$ that takes in $$z$$ to output the conditional probability for that $$z_i$$, we would have another network for $$p(z|x)$$ that takes $$x$$ to ouutput the conditional probability for that $$x_i$$. 
+* Sample $$d_i \sim p(d)$$ \\
+$$d_i \sim p(d)$$, we pass it throught the network to obtain $$q_\phi(m|d)$$. Sample from $$q_{\phi}(m)$$ using the reparameterization trick.
+* Get $$ELBO(q)$$ by sampling $$m \sim q(m|d)$$ \\
+Sampling a few samples from $$q(m|d)$$, the expectaion can be estimated. 
+* Calculate $$\nabla_{\phi} \operatorname{ELBO}(q)$$ \\
+Get the gradient using backpropagation using the reparameterization trick.
+* Update $$\phi$$ using gradient ascent
+* Calculate $$\nabla_{\theta} \operatorname{ELBO}(q)$$ \\
+We note that only the first term here is dependent on $$\theta$$. $$p(m)$$ is the *a priori* distribution of $$m$$ and $$q(m|d)$$ is parameterized on $$\phi$$. For one sample, say $$m^*$$, we pass it through the network to obtain the distribution $$p_\theta(d|m)$$, we can easily differentiate through $$\theta$$, using backpropagation. 
+* Update $$\theta$$ using gradient ascent
 
 ## For geophysical inversion
 The implementaion for probabilistic geophysical inverse problems is fairly similar. In this domain, we have the observed data $$d$$ and its error bars, generally the standard deviation associated with each data point.
@@ -166,13 +157,7 @@ $$
 p(m|d) \propto \exp \left[- (\mathcal{F}(m)- d)^T W (\mathcal{F}(m)- d) \right] \exp \left[- \| m - m_0\|^2 \right]
 $$
 
-As is evident, we do not have to parameterize using $$\theta$$. We again assume $$q_{\phi}(m)$$ to approximate this posterior using variational inference. This we parameterize on $$\phi$$, which can be just the parameters of the family of distribution we are using to approximate the posterior, or the weights of the network. The iteration scheme, therefore, develops as:
-* Sample $$d_i$$, or maybe choose the whole data vector $$d$$.
-* Compute the $$\nabla_{\theta}ELBO(q)$$ by:
-    * Sample $$m$$ from $$q_i(z)$$.
-    * Compute the Expectation for $$ELBO$$ and then its gradient. Computing gradient should be simple because we would have a likelihood term.
-* Compute the gradient of $$ELBO$$ wrt $$q_i$$, that is, $$\phi$$.
-* Update $$q_i$$, that is, $$\phi$$.
+As is evident, we do not have to parameterize using $$\theta$$. We again assume $$q_{\phi}(m)$$ to approximate this posterior using variational inference. This we parameterize on $$\phi$$, which can be just the parameters of the family of distribution we are using to approximate the posterior, or the weights of the network. 
 
 ## Constraints/ Structure?
 While constraints are included in the *a priori* term, it is worth noting that the approach to a lot of geophysical inverse problems assume that the model parameters bear no correlation with each other. However, a decent approach would have a way to incorporate structure. The mean field approximation assumes that the model parameters do not bear any correlation with each other. Would it be possible to do that by including that in the regularizer, that is the *a priori*, similar to what happens in [Occam 1D](https://marineemlab.ucsd.edu/~steve/bio/Occam1D.pdf), and RTO-TKO? 
