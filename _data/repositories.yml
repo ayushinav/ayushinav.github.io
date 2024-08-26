@@ -6,5 +6,6 @@ github_repos:
   - ayushinav/wave_simulation
   - ayushinav/resLAB
   - pawbz/EqUtils.jl
+  - ayushinav.NeuralOperators.jl
   # - pawbz/GeoPhyInv.jl
   # - /al-folio

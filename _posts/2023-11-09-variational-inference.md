@@ -10,7 +10,9 @@ toc:
 ---
 ## Problem statement
 
-In geophysical inversion involving uncertainty quantification, we want to calculate the posterior $$p(m|d)$$, where $$m$$ are the model parameters we want to invert for and $$d$$ are the observed data. Given the *a priori* distribution $$p(m)$$ and the likelihood function $$p(d|m)$$, the bayesian formulation is
+In geophysical inversion involving uncertainty quantification, we want to calculate the posterior 
+<!--  -->
+$$p(m|d)$$, where $$m$$ are the model parameters we want to invert for and $$d$$ are the observed data. Given the *a priori* distribution $$p(m)$$ and the likelihood function $$p(d|m)$$, the bayesian formulation is
 
 $$
 p(m|d) \propto p(d|m) p(d)
@@ -20,7 +22,9 @@ An obvious candidate to the above problem is MCMC, which has asymptotic converge
 
 # Theory of variational inference 
 
-Variational Inference approximates the posterior $$p(m|d)$$ with a distribution $$q(m)$$, parameterized on, say $$\phi$$. Note that $$q(m)$$ is still conditioned on $$d$$. One would be $$q(m) = \mathcal{N}(\mu(d), \sigma(d)^2)$$, where $$\mu$$ and $$\sigma$$ are the outputs from a network with $$d$$ as input and parameterized on $$\phi$$. We want $$q$$ to be as similar to $$p(m|d)$$. In other words, we want the KL divergence $$KL(q(m)|| p(m|d))$$ between the two to be as small as possible:
+Variational Inference approximates the posterior 
+<!--  -->
+$$p(m|d)$$ with a distribution $$q(m)$$, parameterized on, say $$\phi$$. Note that $$q(m)$$ is still conditioned on $$d$$. One would be $$q(m) = \mathcal{N}(\mu(d), \sigma(d)^2)$$, where $$\mu$$ and $$\sigma$$ are the outputs from a network with $$d$$ as input and parameterized on $$\phi$$. We want $$q$$ to be as similar to $$p(m|d)$$. In other words, we want the KL divergence $$KL(q(m)|| p(m|d))$$ between the two to be as small as possible:
 
 $$
 \begin{aligned}
@@ -55,7 +59,9 @@ $$
 p(d) = \int p(d|m) p(m) dm 
 $$
 
-In this case, we do not know what $$p(d|m)$$ looks like, and let's say it's parameterized on $$\theta$$. Let's have $$q(m)$$ again but this time it is to be used as a proposal distribution. For any sample $$d_i$$, estimating the likelihood takes the form
+In this case, we do not know what 
+<!--  -->
+$$p(d|m)$$ looks like, and let's say it's parameterized on $$\theta$$. Let's have $$q(m)$$ again but this time it is to be used as a proposal distribution. For any sample $$d_i$$, estimating the likelihood takes the form
 
 $$
 \begin{aligned}
