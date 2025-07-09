@@ -19,12 +19,8 @@ jobs:
     - name: Setup Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: '3.0.2'
+        ruby-version: '3.2.2'
         bundler-cache: true
-    - name: Fix URI gem conflict and install Bundler
-      run: |
-        gem install bundler
-        rm -rf $(ruby -e 'puts Gem.default_dir')/gems/uri-*
     - name: Install deps
       run: |
         npm install -g mermaid.cli
