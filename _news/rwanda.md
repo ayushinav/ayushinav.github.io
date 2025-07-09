@@ -5,7 +5,7 @@ date: 2023-06-14 16:11:00-0400
 inline: true
 ---
 
-Finished an MT fieldwork in Rwanda with my lab colleagues. A challenging area to do an MT survey on, with lots of powerlines, and hard and sloping terrain, but a great learning experience.
+Finished an **MT fieldwork in Rwanda** with my lab colleagues. A challenging area to do an MT survey on, with lots of powerlines, and hard and sloping terrain, but a great learning experience.
 
 <!-- ---
 layout: post
